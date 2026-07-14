@@ -220,7 +220,9 @@
     }
 
     receiveAttack(lines) {
-      this.pendingGarbage += lines;
+      if (lines <= 0 || this.lost) return;
+      this.addGarbage(lines);
+      this.pendingGarbage = 0;
     }
 
     tick() {
@@ -286,6 +288,13 @@
       this.running = false;
       this.paused = false;
       this.winner = null;
+      this.onChange(this);
+    }
+
+    restart() {
+      this.reset();
+      this.running = true;
+      this.interval = setInterval(() => this.tick(), 80);
       this.onChange(this);
     }
 
@@ -420,9 +429,9 @@
       });
 
       if (state.winner === "draw") {
-        message.textContent = "무승부입니다. 다시 시작을 눌러 새 경기를 시작하세요.";
+        message.textContent = "무승부입니다. 다시 시작을 누르면 새 경기가 바로 시작됩니다.";
       } else if (state.winner !== null) {
-        message.textContent = `${state.winner + 1}P 승리! 다시 시작을 눌러 재경기할 수 있습니다.`;
+        message.textContent = `${state.winner + 1}P 승리! 다시 시작을 누르면 새 경기가 바로 시작됩니다.`;
       } else if (state.paused) {
         message.textContent = "일시정지 중입니다.";
       } else if (state.running) {
@@ -436,7 +445,7 @@
 
     startButton?.addEventListener("click", () => game.start());
     pauseButton?.addEventListener("click", () => game.togglePause());
-    restartButton?.addEventListener("click", () => game.reset());
+    restartButton?.addEventListener("click", () => game.restart());
 
     document.addEventListener("keydown", (event) => {
       const key = event.key.toLowerCase();
@@ -459,7 +468,7 @@
       }
       if (key === "r") {
         event.preventDefault();
-        game.reset();
+        game.restart();
         return;
       }
       const mapped = keyMap[key];
