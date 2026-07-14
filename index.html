@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>mtkkorea | Professional Portfolio</title>
+    <meta
+      name="description"
+      content="mtkkorea professional portfolio with a local two-player Battle Tetris game for GitHub Pages."
+    >
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#home" aria-label="mtkkorea home">mtkkorea</a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
+        <span class="nav-toggle-line"></span>
+        <span class="nav-toggle-line"></span>
+        <span class="nav-toggle-line"></span>
+        <span class="sr-only">메뉴 열기</span>
+      </button>
+      <nav id="site-nav" class="site-nav" aria-label="Primary navigation">
+        <a href="#home">Home</a>
+        <a href="#about">About</a>
+        <a href="#experience">Experience</a>
+        <a href="#projects">Projects</a>
+        <a href="#games">Games</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </header>
+
+    <main>
+      <section id="home" class="hero-section">
+        <div class="hero-copy">
+          <p class="eyebrow">Professional Website</p>
+          <h1>mtkkorea</h1>
+          <p class="hero-text">
+            [사람 확인 필요] 여기에 한 줄 프로페셔널 소개를 입력합니다.
+          </p>
+          <div class="hero-actions" aria-label="Primary actions">
+            <a class="button primary" href="#projects">프로젝트 보기</a>
+            <a class="button secondary" href="#games">전투 테트리스 플레이</a>
+          </div>
+        </div>
+        <aside class="hero-panel" aria-label="Site highlights">
+          <span>Static GitHub Pages</span>
+          <span>Responsive Portfolio</span>
+          <span>Local 2P Battle Tetris</span>
+        </aside>
+      </section>
+
+      <section id="about" class="content-section">
+        <div class="section-heading">
+          <p class="eyebrow">About</p>
+          <h2>소개</h2>
+        </div>
+        <p>
+          [사람 확인 필요] 이름, 역할, 전문 분야, 핵심 경력 요약을 입력합니다.
+        </p>
+      </section>
+
+      <section id="experience" class="content-section">
+        <div class="section-heading">
+          <p class="eyebrow">Experience</p>
+          <h2>경험</h2>
+        </div>
+        <div class="timeline">
+          <article>
+            <h3>[역할 또는 회사명 필요]</h3>
+            <p>[사람 확인 필요] 주요 업무, 성과, 기간을 입력합니다.</p>
+          </article>
+          <article>
+            <h3>[연구 또는 활동 필요]</h3>
+            <p>[사람 확인 필요] 연구, 교육, 오픈소스, 커뮤니티 활동을 입력합니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="projects" class="content-section">
+        <div class="section-heading">
+          <p class="eyebrow">Projects</p>
+          <h2>프로젝트</h2>
+        </div>
+        <div class="project-grid">
+          <article class="project-card">
+            <h3>[프로젝트명 필요]</h3>
+            <p>[사람 확인 필요] 프로젝트 설명, 역할, 사용 기술, 결과를 입력합니다.</p>
+          </article>
+          <article class="project-card">
+            <h3>[프로젝트명 필요]</h3>
+            <p>[사람 확인 필요] 공개 가능한 작업 사례를 입력합니다.</p>
+          </article>
+          <article class="project-card">
+            <h3>[프로젝트명 필요]</h3>
+            <p>[사람 확인 필요] GitHub Pages에 공개할 수 있는 프로젝트를 입력합니다.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="games" class="content-section games-section">
+        <div class="section-heading">
+          <p class="eyebrow">Games</p>
+          <h2>로컬 2인 전투 테트리스</h2>
+          <p>
+            한 컴퓨터 앞에서 두 명이 동시에 플레이합니다. 1P는 왼손 키 묶음,
+            2P는 오른쪽 방향키 묶음을 사용합니다.
+          </p>
+        </div>
+
+        <div class="game-toolbar" aria-label="Battle Tetris controls">
+          <button id="start-game" class="button primary" type="button">게임 시작</button>
+          <button id="pause-game" class="button secondary" type="button">일시정지</button>
+          <button id="restart-game" class="button secondary" type="button">다시 시작</button>
+          <p id="battle-message" class="battle-message" role="status" aria-live="polite">
+            게임 시작을 누르면 두 보드가 동시에 시작됩니다.
+          </p>
+        </div>
+
+        <div class="battle-arena" data-game-root>
+          <article class="player-panel" data-player-panel="0">
+            <header class="player-header">
+              <div>
+                <p class="player-label">1P</p>
+                <h3>왼쪽 플레이어</h3>
+              </div>
+              <div class="score-card">
+                <span>Score</span>
+                <strong data-score="0">0</strong>
+              </div>
+            </header>
+            <div class="player-stats" aria-label="1P stats">
+              <span>Lines <strong data-lines="0">0</strong></span>
+              <span>Level <strong data-level="0">1</strong></span>
+              <span>Attack <strong data-garbage="0">0</strong></span>
+              <span>Best <strong data-best="0">0</strong></span>
+            </div>
+            <div class="board-wrap">
+              <div class="game-board" data-board="0" role="grid" aria-label="1P battle tetris board"></div>
+              <aside class="next-piece">
+                <span>Next</span>
+                <div class="mini-board" data-next="0" aria-label="1P next piece"></div>
+              </aside>
+            </div>
+            <div class="control-help">
+              <span>A: 왼쪽</span>
+              <span>D: 오른쪽</span>
+              <span>S: 빠른 낙하</span>
+              <span>W: 회전</span>
+              <span>Space: 하드드롭</span>
+            </div>
+            <div class="touch-controls" aria-label="1P touch controls">
+              <button type="button" data-touch-player="0" data-action="left">←</button>
+              <button type="button" data-touch-player="0" data-action="rotate">↻</button>
+              <button type="button" data-touch-player="0" data-action="right">→</button>
+              <button type="button" data-touch-player="0" data-action="down">↓</button>
+              <button type="button" data-touch-player="0" data-action="drop">Drop</button>
+            </div>
+          </article>
+
+          <div class="versus-panel" aria-label="Battle status">
+            <span>VS</span>
+            <p>라인을 지우면 상대 보드에 방해줄을 보냅니다.</p>
+          </div>
+
+          <article class="player-panel" data-player-panel="1">
+            <header class="player-header">
+              <div>
+                <p class="player-label">2P</p>
+                <h3>오른쪽 플레이어</h3>
+              </div>
+              <div class="score-card">
+                <span>Score</span>
+                <strong data-score="1">0</strong>
+              </div>
+            </header>
+            <div class="player-stats" aria-label="2P stats">
+              <span>Lines <strong data-lines="1">0</strong></span>
+              <span>Level <strong data-level="1">1</strong></span>
+              <span>Attack <strong data-garbage="1">0</strong></span>
+              <span>Best <strong data-best="1">0</strong></span>
+            </div>
+            <div class="board-wrap">
+              <div class="game-board" data-board="1" role="grid" aria-label="2P battle tetris board"></div>
+              <aside class="next-piece">
+                <span>Next</span>
+                <div class="mini-board" data-next="1" aria-label="2P next piece"></div>
+              </aside>
+            </div>
+            <div class="control-help">
+              <span>←: 왼쪽</span>
+              <span>→: 오른쪽</span>
+              <span>↓: 빠른 낙하</span>
+              <span>↑: 회전</span>
+              <span>Enter: 하드드롭</span>
+            </div>
+            <div class="touch-controls" aria-label="2P touch controls">
+              <button type="button" data-touch-player="1" data-action="left">←</button>
+              <button type="button" data-touch-player="1" data-action="rotate">↻</button>
+              <button type="button" data-touch-player="1" data-action="right">→</button>
+              <button type="button" data-touch-player="1" data-action="down">↓</button>
+              <button type="button" data-touch-player="1" data-action="drop">Drop</button>
+            </div>
+          </article>
+        </div>
+
+        <p class="note">
+          모바일에서는 두 보드가 세로로 배치되고, 각 플레이어의 터치 버튼으로 조작할 수 있습니다.
+          실제 2인 모바일 플레이 방식은 기기 크기에 따라 [사람 확인 필요]입니다.
+        </p>
+      </section>
+
+      <section id="contact" class="content-section">
+        <div class="section-heading">
+          <p class="eyebrow">Contact</p>
+          <h2>연락처</h2>
+        </div>
+        <p>[사람 확인 필요] 이메일, GitHub, LinkedIn 또는 공개 가능한 연락 링크를 입력합니다.</p>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>&copy; <span id="current-year"></span> mtkkorea. Built for GitHub Pages.</p>
+    </footer>
+
+    <script src="script.js" defer></script>
+  </body>
+</html>
