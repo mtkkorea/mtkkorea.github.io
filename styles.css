@@ -442,6 +442,27 @@ h3 {
   line-height: 1;
 }
 
+.attack-rules {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.attack-rules li {
+  border: 1px solid var(--line);
+  border-radius: 0.35rem;
+  padding: 0.45rem;
+  background: rgba(247, 244, 238, 0.8);
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.attack-rules strong {
+  color: var(--accent-strong);
+}
+
 .control-help,
 .touch-controls {
   display: grid;
@@ -472,6 +493,47 @@ h3 {
 }
 
 .note {
+  margin-top: 1rem;
+}
+
+.result-popup {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(34, 34, 29, 0.56);
+}
+
+.result-popup[hidden] {
+  display: none;
+}
+
+.result-popup-card {
+  width: min(92vw, 25rem);
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
+.result-popup-card h3 {
+  margin: 0.25rem 0;
+  font-size: clamp(1.8rem, 7vw, 3rem);
+}
+
+.result-popup-card p {
+  color: var(--muted);
+}
+
+.result-popup-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
   margin-top: 1rem;
 }
 

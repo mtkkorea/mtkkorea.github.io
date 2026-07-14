@@ -382,6 +382,11 @@
     const pauseButton = document.querySelector("#pause-game");
     const restartButton = document.querySelector("#restart-game");
     const message = document.querySelector("#battle-message");
+    const resultPopup = document.querySelector("#result-popup");
+    const resultPopupTitle = document.querySelector("#result-popup-title");
+    const resultPopupMessage = document.querySelector("#result-popup-message");
+    const resultPopupRestart = document.querySelector("#result-popup-restart");
+    const resultPopupClose = document.querySelector("#result-popup-close");
     const boards = [...document.querySelectorAll("[data-board]")];
     const nextBoards = [...document.querySelectorAll("[data-next]")];
 
@@ -408,6 +413,25 @@
     const boardCells = boards.map((board) => makeCells(board, COLS * ROWS, "cell"));
     const miniCells = nextBoards.map((board) => makeCells(board, MINI * MINI, "mini-cell"));
     const game = new BattleTetris();
+    let announcedWinner = null;
+
+    const winnerText = (winner) => {
+      if (winner === "draw") return "무승부";
+      return `${winner + 1}P 승리`;
+    };
+
+    const hideResultPopup = () => {
+      resultPopup?.setAttribute("hidden", "");
+    };
+
+    const showResultPopup = (winner) => {
+      if (!resultPopup || !resultPopupTitle || !resultPopupMessage) return;
+      const resultText = winnerText(winner);
+      resultPopupTitle.textContent = resultText;
+      resultPopupMessage.textContent = `${resultText}입니다. 다시 시작을 누르면 새 경기가 바로 시작됩니다.`;
+      resultPopup.removeAttribute("hidden");
+      resultPopupClose?.focus();
+    };
 
     const render = (state) => {
       state.players.forEach((player, playerIndex) => {
@@ -439,6 +463,14 @@
       } else {
         message.textContent = "게임 시작을 누르면 두 보드가 동시에 시작됩니다.";
       }
+
+      if (state.winner === null) {
+        announcedWinner = null;
+        hideResultPopup();
+      } else if (announcedWinner !== state.winner) {
+        announcedWinner = state.winner;
+        showResultPopup(state.winner);
+      }
     };
 
     game.setRenderer(render);
@@ -446,6 +478,8 @@
     startButton?.addEventListener("click", () => game.start());
     pauseButton?.addEventListener("click", () => game.togglePause());
     restartButton?.addEventListener("click", () => game.restart());
+    resultPopupClose?.addEventListener("click", hideResultPopup);
+    resultPopupRestart?.addEventListener("click", () => game.restart());
 
     document.addEventListener("keydown", (event) => {
       const key = event.key.toLowerCase();
