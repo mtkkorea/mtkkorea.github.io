@@ -82,6 +82,11 @@
       this.reset();
     }
 
+    setBestKey(key) {
+      this.bestKey = key;
+      this.best = getStoredBest(this.bestKey);
+    }
+
     reset() {
       this.board = createEmptyBoard();
       this.bag = [];
@@ -259,18 +264,36 @@
   }
 
   class BattleTetris {
-    constructor() {
+    constructor(mode = "versus") {
+      this.mode = mode;
       this.players = [new PlayerState(0), new PlayerState(1)];
       this.running = false;
       this.paused = false;
       this.interval = null;
       this.winner = null;
       this.onChange = () => {};
+      this.configureBestKeys();
     }
 
     setRenderer(callback) {
       this.onChange = callback;
       this.onChange(this);
+    }
+
+    configureBestKeys() {
+      this.players[0].setBestKey(this.mode === "single" ? "battleTetrisBestSingle" : "battleTetrisBestP1");
+      this.players[1].setBestKey("battleTetrisBestP2");
+    }
+
+    activePlayers() {
+      return this.mode === "single" ? [this.players[0]] : this.players;
+    }
+
+    setMode(mode) {
+      if (!["single", "versus"].includes(mode) || mode === this.mode) return;
+      this.mode = mode;
+      this.configureBestKeys();
+      this.reset();
     }
 
     start() {
@@ -284,6 +307,7 @@
 
     reset() {
       this.stopTimer();
+      this.configureBestKeys();
       this.players.forEach((player) => player.reset());
       this.running = false;
       this.paused = false;
@@ -313,9 +337,9 @@
 
     tick() {
       if (!this.running || this.paused || this.winner) return;
-      const results = this.players.map((player) => player.tick());
+      const results = this.activePlayers().map((player) => player.tick());
       results.forEach((result, index) => {
-        if (result.attack > 0) {
+        if (this.mode === "versus" && result.attack > 0) {
           this.players[1 - index].receiveAttack(result.attack);
         }
       });
@@ -325,6 +349,7 @@
 
     action(playerIndex, action) {
       const player = this.players[playerIndex];
+      if (this.mode === "single" && playerIndex !== 0) return;
       if (!player || !this.running || this.paused || this.winner || player.lost) return;
       let result = null;
       if (action === "left") player.move(-1);
@@ -332,7 +357,7 @@
       if (action === "rotate") player.rotate();
       if (action === "down") result = player.softDrop();
       if (action === "drop") result = player.hardDrop();
-      if (result && result.attack > 0) {
+      if (this.mode === "versus" && result && result.attack > 0) {
         this.players[1 - playerIndex].receiveAttack(result.attack);
       }
       this.checkWinner();
@@ -341,6 +366,14 @@
 
     checkWinner() {
       const [p1, p2] = this.players;
+      if (this.mode === "single") {
+        if (p1.lost) {
+          this.winner = "single-over";
+          this.running = false;
+          this.stopTimer();
+        }
+        return;
+      }
       if (p1.lost || p2.lost) {
         this.winner = p1.lost && p2.lost ? "draw" : p1.lost ? 1 : 0;
         this.running = false;
@@ -387,6 +420,9 @@
     const resultPopupMessage = document.querySelector("#result-popup-message");
     const resultPopupRestart = document.querySelector("#result-popup-restart");
     const resultPopupClose = document.querySelector("#result-popup-close");
+    const modeInputs = [...document.querySelectorAll('input[name="game-mode"]')];
+    const gameRoot = document.querySelector("[data-game-root]");
+    const modeCopy = document.querySelector("[data-mode-copy]");
     const boards = [...document.querySelectorAll("[data-board]")];
     const nextBoards = [...document.querySelectorAll("[data-next]")];
 
@@ -416,6 +452,7 @@
     let announcedWinner = null;
 
     const winnerText = (winner) => {
+      if (winner === "single-over") return "게임 오버";
       if (winner === "draw") return "무승부";
       return `${winner + 1}P 승리`;
     };
@@ -452,16 +489,35 @@
         panel.toggleAttribute("data-lost", player.lost);
       });
 
-      if (state.winner === "draw") {
+      gameRoot?.setAttribute("data-mode", state.mode);
+      modeInputs.forEach((input) => {
+        input.checked = input.value === state.mode;
+      });
+      if (modeCopy) {
+        modeCopy.textContent =
+          state.mode === "single"
+            ? "1인용에서는 공격 없이 1P 점수와 최고 점수에 도전합니다."
+            : "2인용에서는 라인을 지우면 상대 보드에 방해줄을 보냅니다.";
+      }
+
+      if (state.winner === "single-over") {
+        message.textContent = "게임 오버입니다. 다시 시작을 누르면 1인용으로 바로 재도전합니다.";
+      } else if (state.winner === "draw") {
         message.textContent = "무승부입니다. 다시 시작을 누르면 새 경기가 바로 시작됩니다.";
       } else if (state.winner !== null) {
         message.textContent = `${state.winner + 1}P 승리! 다시 시작을 누르면 새 경기가 바로 시작됩니다.`;
       } else if (state.paused) {
         message.textContent = "일시정지 중입니다.";
       } else if (state.running) {
-        message.textContent = "경기 진행 중입니다. P 또는 일시정지 버튼으로 멈출 수 있습니다.";
+        message.textContent =
+          state.mode === "single"
+            ? "1인용 진행 중입니다. P 또는 일시정지 버튼으로 멈출 수 있습니다."
+            : "2인용 경기 진행 중입니다. P 또는 일시정지 버튼으로 멈출 수 있습니다.";
       } else {
-        message.textContent = "게임 시작을 누르면 두 보드가 동시에 시작됩니다.";
+        message.textContent =
+          state.mode === "single"
+            ? "1인용을 선택했습니다. 게임 시작을 누르면 1P 보드만 시작됩니다."
+            : "2인용을 선택했습니다. 게임 시작을 누르면 두 보드가 동시에 시작됩니다.";
       }
 
       if (state.winner === null) {
@@ -480,6 +536,13 @@
     restartButton?.addEventListener("click", () => game.restart());
     resultPopupClose?.addEventListener("click", hideResultPopup);
     resultPopupRestart?.addEventListener("click", () => game.restart());
+    modeInputs.forEach((input) => {
+      input.addEventListener("change", () => {
+        if (input.checked) {
+          game.setMode(input.value);
+        }
+      });
+    });
 
     document.addEventListener("keydown", (event) => {
       const key = event.key.toLowerCase();
