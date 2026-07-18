@@ -293,7 +293,8 @@ h3 {
   margin-bottom: 1rem;
 }
 
-.mode-selector {
+.mode-selector,
+.control-selector {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
@@ -303,7 +304,8 @@ h3 {
   background: rgba(255, 255, 255, 0.72);
 }
 
-.mode-selector legend {
+.mode-selector legend,
+.control-selector legend {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -312,17 +314,20 @@ h3 {
   white-space: nowrap;
 }
 
-.mode-selector label {
+.mode-selector label,
+.control-selector label {
   cursor: pointer;
 }
 
-.mode-selector input {
+.mode-selector input,
+.control-selector input {
   position: absolute;
   opacity: 0;
   pointer-events: none;
 }
 
-.mode-selector span {
+.mode-selector span,
+.control-selector span {
   display: inline-flex;
   min-height: 2.2rem;
   align-items: center;
@@ -333,14 +338,20 @@ h3 {
   font-weight: 700;
 }
 
-.mode-selector input:checked + span {
+.mode-selector input:checked + span,
+.control-selector input:checked + span {
   background: var(--accent);
   color: #fffaf0;
 }
 
-.mode-selector input:focus-visible + span {
+.mode-selector input:focus-visible + span,
+.control-selector input:focus-visible + span {
   outline: 3px solid rgba(197, 104, 28, 0.28);
   outline-offset: 2px;
+}
+
+.control-selector[hidden] {
+  display: none;
 }
 
 .battle-message {
@@ -686,17 +697,20 @@ h3 {
     width: 100%;
   }
 
-  .mode-selector {
+  .mode-selector,
+  .control-selector {
     width: 100%;
     justify-content: center;
     border-radius: 0.5rem;
   }
 
-  .mode-selector label {
+  .mode-selector label,
+  .control-selector label {
     flex: 1;
   }
 
-  .mode-selector span {
+  .mode-selector span,
+  .control-selector span {
     justify-content: center;
     width: 100%;
   }

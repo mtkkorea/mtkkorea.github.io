@@ -119,6 +119,17 @@
               <span>2인용</span>
             </label>
           </fieldset>
+          <fieldset class="control-selector" data-single-control-selector aria-label="1인용 조작 자판 선택">
+            <legend>1인용 조작</legend>
+            <label>
+              <input type="radio" name="single-control" value="left" checked />
+              <span>왼쪽 자판 A/S/D/W</span>
+            </label>
+            <label>
+              <input type="radio" name="single-control" value="right" />
+              <span>오른쪽 방향키</span>
+            </label>
+          </fieldset>
           <button id="start-game" class="button primary" type="button">게임 시작</button>
           <button id="pause-game" class="button secondary" type="button">일시정지</button>
           <button id="restart-game" class="button secondary" type="button">다시 시작</button>
@@ -152,7 +163,7 @@
                 <div class="mini-board" data-next="0" aria-label="1P next piece"></div>
               </aside>
             </div>
-            <div class="control-help">
+            <div class="control-help" data-control-help="0">
               <span>A: 왼쪽</span>
               <span>D: 오른쪽</span>
               <span>S: 빠른 낙하</span>
@@ -202,7 +213,7 @@
                 <div class="mini-board" data-next="1" aria-label="2P next piece"></div>
               </aside>
             </div>
-            <div class="control-help">
+            <div class="control-help" data-control-help="1">
               <span>←: 왼쪽</span>
               <span>→: 오른쪽</span>
               <span>↓: 빠른 낙하</span>

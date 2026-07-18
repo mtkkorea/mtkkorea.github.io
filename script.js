@@ -266,6 +266,7 @@
   class BattleTetris {
     constructor(mode = "versus") {
       this.mode = mode;
+      this.singleControlScheme = "left";
       this.players = [new PlayerState(0), new PlayerState(1)];
       this.running = false;
       this.paused = false;
@@ -294,6 +295,19 @@
       this.mode = mode;
       this.configureBestKeys();
       this.reset();
+    }
+
+    setSingleControlScheme(scheme) {
+      if (!["left", "right"].includes(scheme) || scheme === this.singleControlScheme) return;
+      this.singleControlScheme = scheme;
+      this.onChange(this);
+    }
+
+    playerIndexForControl(controlSide) {
+      if (this.mode === "single") {
+        return controlSide === this.singleControlScheme ? 0 : null;
+      }
+      return controlSide === "left" ? 0 : 1;
     }
 
     start() {
@@ -364,6 +378,12 @@
       this.onChange(this);
     }
 
+    actionFromControl(controlSide, action) {
+      const playerIndex = this.playerIndexForControl(controlSide);
+      if (playerIndex === null) return;
+      this.action(playerIndex, action);
+    }
+
     checkWinner() {
       const [p1, p2] = this.players;
       if (this.mode === "single") {
@@ -421,8 +441,11 @@
     const resultPopupRestart = document.querySelector("#result-popup-restart");
     const resultPopupClose = document.querySelector("#result-popup-close");
     const modeInputs = [...document.querySelectorAll('input[name="game-mode"]')];
+    const singleControlInputs = [...document.querySelectorAll('input[name="single-control"]')];
+    const singleControlSelector = document.querySelector("[data-single-control-selector]");
     const gameRoot = document.querySelector("[data-game-root]");
     const modeCopy = document.querySelector("[data-mode-copy]");
+    const controlHelps = [...document.querySelectorAll("[data-control-help]")];
     const boards = [...document.querySelectorAll("[data-board]")];
     const nextBoards = [...document.querySelectorAll("[data-next]")];
 
@@ -450,6 +473,10 @@
     const miniCells = nextBoards.map((board) => makeCells(board, MINI * MINI, "mini-cell"));
     const game = new BattleTetris();
     let announcedWinner = null;
+    const controlHelpLabels = {
+      left: ["A: 왼쪽", "D: 오른쪽", "S: 빠른 낙하", "W: 회전", "Space: 하드드롭"],
+      right: ["←: 왼쪽", "→: 오른쪽", "↓: 빠른 낙하", "↑: 회전", "Enter: 하드드롭"],
+    };
 
     const winnerText = (winner) => {
       if (winner === "single-over") return "게임 오버";
@@ -468,6 +495,19 @@
       resultPopupMessage.textContent = `${resultText}입니다. 다시 시작을 누르면 새 경기가 바로 시작됩니다.`;
       resultPopup.removeAttribute("hidden");
       resultPopupClose?.focus();
+    };
+
+    const updateControlHelp = (container, labels) => {
+      if (!container) return;
+      const key = labels.join("|");
+      if (container.dataset.helpKey === key) return;
+      container.dataset.helpKey = key;
+      container.textContent = "";
+      labels.forEach((label) => {
+        const item = document.createElement("span");
+        item.textContent = label;
+        container.appendChild(item);
+      });
     };
 
     const render = (state) => {
@@ -493,11 +533,27 @@
       modeInputs.forEach((input) => {
         input.checked = input.value === state.mode;
       });
+      singleControlInputs.forEach((input) => {
+        input.checked = input.value === state.singleControlScheme;
+      });
+      if (singleControlSelector) {
+        singleControlSelector.toggleAttribute("hidden", state.mode !== "single");
+        singleControlSelector.setAttribute("aria-hidden", (state.mode !== "single").toString());
+      }
+      updateControlHelp(
+        controlHelps[0],
+        controlHelpLabels[state.mode === "single" ? state.singleControlScheme : "left"],
+      );
+      updateControlHelp(controlHelps[1], controlHelpLabels.right);
       if (modeCopy) {
         modeCopy.textContent =
           state.mode === "single"
             ? "1인용에서는 공격 없이 1P 점수와 최고 점수에 도전합니다."
             : "2인용에서는 라인을 지우면 상대 보드에 방해줄을 보냅니다.";
+      }
+
+      if (modeCopy && state.mode === "single") {
+        modeCopy.textContent = `1인용에서는 ${state.singleControlScheme === "left" ? "왼쪽 자판" : "오른쪽 방향키"}로 1P 점수와 최고 점수에 도전합니다.`;
       }
 
       if (state.winner === "single-over") {
@@ -518,6 +574,13 @@
           state.mode === "single"
             ? "1인용을 선택했습니다. 게임 시작을 누르면 1P 보드만 시작됩니다."
             : "2인용을 선택했습니다. 게임 시작을 누르면 두 보드가 동시에 시작됩니다.";
+      }
+
+      if (state.mode === "single" && state.winner === null && !state.paused) {
+        const controlLabel = state.singleControlScheme === "left" ? "왼쪽 자판" : "오른쪽 방향키";
+        message.textContent = state.running
+          ? `1인용 진행 중입니다. ${controlLabel}로 조작하고, P 또는 일시정지 버튼으로 멈출 수 있습니다.`
+          : `1인용을 선택했습니다. ${controlLabel}를 사용합니다. 게임 시작을 누르면 1P 보드만 시작합니다.`;
       }
 
       if (state.winner === null) {
@@ -543,20 +606,27 @@
         }
       });
     });
+    singleControlInputs.forEach((input) => {
+      input.addEventListener("change", () => {
+        if (input.checked) {
+          game.setSingleControlScheme(input.value);
+        }
+      });
+    });
 
     document.addEventListener("keydown", (event) => {
       const key = event.key.toLowerCase();
       const keyMap = {
-        a: [0, "left"],
-        d: [0, "right"],
-        s: [0, "down"],
-        w: [0, "rotate"],
-        " ": [0, "drop"],
-        arrowleft: [1, "left"],
-        arrowright: [1, "right"],
-        arrowdown: [1, "down"],
-        arrowup: [1, "rotate"],
-        enter: [1, "drop"],
+        a: ["left", "left"],
+        d: ["left", "right"],
+        s: ["left", "down"],
+        w: ["left", "rotate"],
+        " ": ["left", "drop"],
+        arrowleft: ["right", "left"],
+        arrowright: ["right", "right"],
+        arrowdown: ["right", "down"],
+        arrowup: ["right", "rotate"],
+        enter: ["right", "drop"],
       };
       if (key === "p") {
         event.preventDefault();
@@ -571,7 +641,7 @@
       const mapped = keyMap[key];
       if (!mapped) return;
       event.preventDefault();
-      game.action(mapped[0], mapped[1]);
+      game.actionFromControl(mapped[0], mapped[1]);
     });
 
     document.querySelectorAll("[data-touch-player]").forEach((button) => {
