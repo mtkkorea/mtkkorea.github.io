@@ -395,6 +395,31 @@ h3 {
   display: none;
 }
 
+.sound-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  border: 1px solid rgba(14, 165, 233, 0.24);
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.sound-toggle[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: #f8fafc;
+  background: var(--accent);
+}
+
+.sound-status {
+  flex: 1 1 16rem;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .games-section {
   width: min(1680px, calc(100% - 0.75rem));
   min-height: calc(100vh - 4.9rem);
@@ -945,6 +970,10 @@ h3 {
 
   .brick-hud {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sound-panel .button {
+    width: 100%;
   }
 }
 

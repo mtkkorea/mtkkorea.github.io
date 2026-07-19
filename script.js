@@ -51,6 +51,138 @@
     }
   };
 
+  class SoundManager {
+    constructor() {
+      this.context = null;
+      this.enabled = this.getPreference();
+      this.lastPlayed = new Map();
+      this.statusElement = null;
+      this.toggleButton = null;
+      this.patterns = {
+        start: [440, 660, 0.11, "triangle", 0.045],
+        pause: [260, 180, 0.12, "sine", 0.04],
+        restart: [320, 520, 0.13, "triangle", 0.045],
+        move: [220, 260, 0.035, "square", 0.018],
+        rotate: [360, 540, 0.055, "triangle", 0.028],
+        drop: [180, 90, 0.08, "sawtooth", 0.035],
+        clear: [620, 880, 0.15, "triangle", 0.06],
+        attack: [160, 420, 0.16, "sawtooth", 0.055],
+        win: [520, 780, 0.22, "triangle", 0.07],
+        gameover: [210, 90, 0.28, "sawtooth", 0.06],
+        fire: [520, 980, 0.09, "triangle", 0.05],
+        hit: [300, 240, 0.035, "square", 0.018],
+        break: [780, 1180, 0.12, "triangle", 0.055],
+        bonus: [880, 1320, 0.16, "sine", 0.06],
+        round: [420, 700, 0.14, "triangle", 0.05],
+      };
+      this.limits = {
+        move: 65,
+        hit: 45,
+        break: 35,
+      };
+    }
+
+    getPreference() {
+      try {
+        if (typeof localStorage === "undefined") return true;
+        const stored = localStorage.getItem("arcadeSoundEnabled");
+        return stored === null ? true : stored !== "0";
+      } catch {
+        return true;
+      }
+    }
+
+    attach({ button, status }) {
+      this.toggleButton = button;
+      this.statusElement = status;
+      this.updateUi();
+      button?.addEventListener("click", async () => {
+        this.enabled = !this.enabled;
+        this.savePreference();
+        if (this.enabled) {
+          await this.unlock();
+          this.play("start");
+        }
+        this.updateUi();
+      });
+      ["pointerdown", "keydown", "touchstart"].forEach((eventName) => {
+        document.addEventListener(eventName, () => this.unlock(), { once: true, passive: true });
+      });
+    }
+
+    savePreference() {
+      try {
+        if (typeof localStorage !== "undefined") {
+          localStorage.setItem("arcadeSoundEnabled", this.enabled ? "1" : "0");
+        }
+      } catch {
+        // Sound preferences are optional in restricted storage contexts.
+      }
+    }
+
+    updateUi() {
+      if (this.toggleButton) {
+        this.toggleButton.textContent = this.enabled ? "효과음 켜짐" : "효과음 꺼짐";
+        this.toggleButton.setAttribute("aria-pressed", this.enabled.toString());
+      }
+      if (this.statusElement) {
+        this.statusElement.textContent = this.enabled
+          ? "효과음은 첫 클릭이나 터치 이후 자동으로 활성화됩니다."
+          : "효과음이 꺼져 있습니다. 버튼을 눌러 다시 켤 수 있습니다.";
+      }
+    }
+
+    async unlock() {
+      if (!this.enabled || typeof window === "undefined") return false;
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) {
+        if (this.statusElement) this.statusElement.textContent = "이 브라우저는 Web Audio 효과음을 지원하지 않습니다.";
+        return false;
+      }
+      if (!this.context) {
+        this.context = new AudioContextClass();
+      }
+      if (this.context.state === "suspended") {
+        try {
+          await this.context.resume();
+        } catch {
+          return false;
+        }
+      }
+      return this.context.state === "running";
+    }
+
+    play(name) {
+      if (!this.enabled || typeof window === "undefined") return;
+      const now = performance.now();
+      const limit = this.limits[name] || 0;
+      if (limit && now - (this.lastPlayed.get(name) || 0) < limit) return;
+      this.lastPlayed.set(name, now);
+      const pattern = this.patterns[name];
+      if (!pattern) return;
+      this.unlock().then((ready) => {
+        if (!ready || !this.context) return;
+        this.tone(...pattern);
+      });
+    }
+
+    tone(startFrequency, endFrequency, duration, type, gainValue) {
+      const start = this.context.currentTime;
+      const oscillator = this.context.createOscillator();
+      const gain = this.context.createGain();
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(startFrequency, start);
+      oscillator.frequency.exponentialRampToValueAtTime(Math.max(40, endFrequency), start + duration);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(gainValue, start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      oscillator.connect(gain);
+      gain.connect(this.context.destination);
+      oscillator.start(start);
+      oscillator.stop(start + duration + 0.02);
+    }
+  }
+
   const cloneMatrix = (matrix) => matrix.map((row) => [...row]);
 
   const rotateMatrix = (matrix) => {
@@ -273,12 +405,21 @@
       this.interval = null;
       this.winner = null;
       this.onChange = () => {};
+      this.onSound = () => {};
       this.configureBestKeys();
     }
 
     setRenderer(callback) {
       this.onChange = callback;
       this.onChange(this);
+    }
+
+    setSoundPlayer(callback) {
+      this.onSound = callback;
+    }
+
+    emitSound(name) {
+      this.onSound(name);
     }
 
     configureBestKeys() {
@@ -316,6 +457,7 @@
       this.running = true;
       this.paused = false;
       this.interval = setInterval(() => this.tick(), 80);
+      this.emitSound("start");
       this.onChange(this);
     }
 
@@ -333,12 +475,14 @@
       this.reset();
       this.running = true;
       this.interval = setInterval(() => this.tick(), 80);
+      this.emitSound("restart");
       this.onChange(this);
     }
 
     togglePause() {
       if (!this.running || this.winner) return;
       this.paused = !this.paused;
+      this.emitSound(this.paused ? "pause" : "start");
       this.onChange(this);
     }
 
@@ -353,8 +497,10 @@
       if (!this.running || this.paused || this.winner) return;
       const results = this.activePlayers().map((player) => player.tick());
       results.forEach((result, index) => {
+        if (result.cleared > 0) this.emitSound("clear");
         if (this.mode === "versus" && result.attack > 0) {
           this.players[1 - index].receiveAttack(result.attack);
+          this.emitSound("attack");
         }
       });
       this.checkWinner();
@@ -366,13 +512,21 @@
       if (this.mode === "single" && playerIndex !== 0) return;
       if (!player || !this.running || this.paused || this.winner || player.lost) return;
       let result = null;
-      if (action === "left") player.move(-1);
-      if (action === "right") player.move(1);
-      if (action === "rotate") player.rotate();
-      if (action === "down") result = player.softDrop();
-      if (action === "drop") result = player.hardDrop();
+      if (action === "left" && player.move(-1)) this.emitSound("move");
+      if (action === "right" && player.move(1)) this.emitSound("move");
+      if (action === "rotate" && player.rotate()) this.emitSound("rotate");
+      if (action === "down") {
+        result = player.softDrop();
+        this.emitSound("move");
+      }
+      if (action === "drop") {
+        result = player.hardDrop();
+        this.emitSound("drop");
+      }
+      if (result && result.cleared > 0) this.emitSound("clear");
       if (this.mode === "versus" && result && result.attack > 0) {
         this.players[1 - playerIndex].receiveAttack(result.attack);
+        this.emitSound("attack");
       }
       this.checkWinner();
       this.onChange(this);
@@ -385,12 +539,14 @@
     }
 
     checkWinner() {
+      if (this.winner !== null) return;
       const [p1, p2] = this.players;
       if (this.mode === "single") {
         if (p1.lost) {
           this.winner = "single-over";
           this.running = false;
           this.stopTimer();
+          this.emitSound("gameover");
         }
         return;
       }
@@ -398,6 +554,7 @@
         this.winner = p1.lost && p2.lost ? "draw" : p1.lost ? 1 : 0;
         this.running = false;
         this.stopTimer();
+        this.emitSound(this.winner === "draw" ? "gameover" : "win");
       }
     }
   }
@@ -407,6 +564,7 @@
       this.canvas = canvas;
       this.ctx = canvas.getContext("2d");
       this.elements = elements;
+      this.sound = elements.sound || (() => {});
       this.bestKey = "brickBlastBest";
       this.best = getStoredBest(this.bestKey);
       this.width = canvas.width;
@@ -456,6 +614,7 @@
     start() {
       if (this.gameOver) this.reset();
       this.running = true;
+      this.sound("start");
       this.updateHud("발사 각도를 잡아보세요. 위쪽으로 당길수록 더 시원하게 튕깁니다.");
       this.render();
     }
@@ -493,6 +652,7 @@
       if (this.blocks.some((block) => block.row >= this.rows - 1)) {
         this.gameOver = true;
         this.running = false;
+        this.sound("gameover");
         this.updateHud("게임 오버! 블록이 위험선에 닿았습니다. 다시 시작으로 재도전하세요.");
       }
     }
@@ -554,6 +714,7 @@
         done: false,
       }));
       this.moving = true;
+      this.sound("fire");
       this.updateHud(`${this.ballCount}개의 공을 발사했습니다. 블록이 와르르 깨지는 순간을 기다려보세요.`);
       this.tick();
     }
@@ -625,6 +786,7 @@
         if (Math.hypot(ball.x - center.x, ball.y - center.y) < this.cellSize() * 0.32) {
           bonus.collected = true;
           this.pendingBonus += 1;
+          this.sound("bonus");
           this.spawnParticles(center.x, center.y, "#22c55e", 8);
         }
       });
@@ -655,10 +817,12 @@
       }
       block.hp -= 1;
       this.score += 1;
+      this.sound("hit");
       this.spawnParticles(ball.x, ball.y, "#fbbf24", 3);
       if (block.hp <= 0) {
         this.blocks.splice(index, 1);
         this.score += 10 + this.round;
+        this.sound("break");
         this.spawnParticles(rect.x + rect.width / 2, rect.y + rect.height / 2, "#fb7185", 14);
       }
       if (this.score > this.best) {
@@ -676,6 +840,7 @@
       this.bonusBalls = this.bonusBalls.filter((bonus) => !bonus.collected);
       this.addRow();
       if (!this.gameOver) {
+        this.sound("round");
         this.updateHud(`라운드 ${this.round}입니다.${bonusText} 다시 조준해서 더 크게 터트려보세요.`);
       }
       this.render();
@@ -904,6 +1069,11 @@
     const gamesSection = document.querySelector("#battle-tetris");
     const boards = [...document.querySelectorAll("[data-board]")];
     const nextBoards = [...document.querySelectorAll("[data-next]")];
+    const sound = new SoundManager();
+    sound.attach({
+      button: document.querySelector("#sound-toggle"),
+      status: document.querySelector("#sound-status"),
+    });
 
     const gameTabs = [...document.querySelectorAll("[role='tab'][aria-controls]")];
     const gamePanels = [...document.querySelectorAll(".game-panel[role='tabpanel']")];
@@ -942,9 +1112,13 @@
         score: document.querySelector("[data-brick-score]"),
         best: document.querySelector("[data-brick-best]"),
         message: document.querySelector("#brick-message"),
+        sound: (name) => sound.play(name),
       });
       document.querySelector("#brick-start")?.addEventListener("click", () => brickGame.start());
-      document.querySelector("#brick-restart")?.addEventListener("click", () => brickGame.reset());
+      document.querySelector("#brick-restart")?.addEventListener("click", () => {
+        sound.play("restart");
+        brickGame.reset();
+      });
       window.BrickBlast = { BrickBlast };
     }
 
@@ -971,6 +1145,7 @@
     const boardCells = boards.map((board) => makeCells(board, COLS * ROWS, "cell"));
     const miniCells = nextBoards.map((board) => makeCells(board, MINI * MINI, "mini-cell"));
     const game = new BattleTetris();
+    game.setSoundPlayer((name) => sound.play(name));
     let announcedWinner = null;
     const controlHelpLabels = {
       left: ["A: 왼쪽", "D: 오른쪽", "S: 빠른 낙하", "W: 회전", "Space: 하드드롭"],
@@ -1211,7 +1386,7 @@
   }
 
   if (typeof globalThis !== "undefined") {
-    globalThis.BattleTetrisCore = { BattleTetris, PlayerState, rotateMatrix, createEmptyBoard };
-    globalThis.BrickBlastCore = { BrickBlast };
+    globalThis.BattleTetrisCore = { BattleTetris, PlayerState, rotateMatrix, createEmptyBoard, SoundManager };
+    globalThis.BrickBlastCore = { BrickBlast, SoundManager };
   }
 })();
