@@ -434,6 +434,7 @@
     const startButton = document.querySelector("#start-game");
     const pauseButton = document.querySelector("#pause-game");
     const restartButton = document.querySelector("#restart-game");
+    const fullscreenButton = document.querySelector("#fullscreen-game");
     const message = document.querySelector("#battle-message");
     const resultPopup = document.querySelector("#result-popup");
     const resultPopupTitle = document.querySelector("#result-popup-title");
@@ -446,6 +447,7 @@
     const gameRoot = document.querySelector("[data-game-root]");
     const modeCopy = document.querySelector("[data-mode-copy]");
     const controlHelps = [...document.querySelectorAll("[data-control-help]")];
+    const gamesSection = document.querySelector("#games");
     const boards = [...document.querySelectorAll("[data-board]")];
     const nextBoards = [...document.querySelectorAll("[data-next]")];
 
@@ -495,6 +497,54 @@
       resultPopupMessage.textContent = `${resultText}입니다. 다시 시작을 누르면 새 경기가 바로 시작됩니다.`;
       resultPopup.removeAttribute("hidden");
       resultPopupClose?.focus();
+    };
+
+    const fullscreenElement = () =>
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.msFullscreenElement ||
+      null;
+
+    const isGamesFullscreen = () => fullscreenElement() === gamesSection;
+
+    const updateFullscreenButton = () => {
+      if (!fullscreenButton) return;
+      const isFullscreen = isGamesFullscreen();
+      fullscreenButton.textContent = isFullscreen ? "전체화면 종료" : "전체화면";
+      fullscreenButton.setAttribute("aria-pressed", isFullscreen.toString());
+    };
+
+    const requestFullscreen = (element) => {
+      const request =
+        element?.requestFullscreen ||
+        element?.webkitRequestFullscreen ||
+        element?.msRequestFullscreen;
+      return request ? request.call(element) : Promise.reject(new Error("fullscreen unsupported"));
+    };
+
+    const exitFullscreen = () => {
+      const exit =
+        document.exitFullscreen ||
+        document.webkitExitFullscreen ||
+        document.msExitFullscreen;
+      return exit ? exit.call(document) : Promise.reject(new Error("fullscreen unsupported"));
+    };
+
+    const toggleFullscreen = async () => {
+      if (!gamesSection) return;
+      try {
+        if (isGamesFullscreen()) {
+          await exitFullscreen();
+        } else {
+          await requestFullscreen(gamesSection);
+        }
+      } catch {
+        if (message) {
+          message.textContent = "이 브라우저에서는 전체화면을 시작할 수 없습니다. 브라우저 설정을 확인해 주세요.";
+        }
+      } finally {
+        updateFullscreenButton();
+      }
     };
 
     const updateControlHelp = (container, labels) => {
@@ -597,6 +647,10 @@
     startButton?.addEventListener("click", () => game.start());
     pauseButton?.addEventListener("click", () => game.togglePause());
     restartButton?.addEventListener("click", () => game.restart());
+    fullscreenButton?.addEventListener("click", toggleFullscreen);
+    document.addEventListener("fullscreenchange", updateFullscreenButton);
+    document.addEventListener("webkitfullscreenchange", updateFullscreenButton);
+    document.addEventListener("MSFullscreenChange", updateFullscreenButton);
     resultPopupClose?.addEventListener("click", hideResultPopup);
     resultPopupRestart?.addEventListener("click", () => game.restart());
     modeInputs.forEach((input) => {

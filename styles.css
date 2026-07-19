@@ -8,7 +8,8 @@
   --accent-strong: #b42318;
   --gold: #c28b13;
   --shadow: 0 24px 80px rgba(22, 22, 22, 0.12);
-  --cell: min(3.7vw, 26px);
+  --cell: clamp(26px, 2.35vw, 36px);
+  --mini-cell: clamp(1rem, 1.25vw, 1.35rem);
 }
 
 * {
@@ -285,7 +286,31 @@ h3 {
 }
 
 .games-section {
-  width: min(1320px, calc(100% - 1rem));
+  width: min(1680px, calc(100% - 0.75rem));
+  min-height: calc(100vh - 4.9rem);
+}
+
+.games-section:fullscreen {
+  width: 100%;
+  min-height: 100vh;
+  overflow: auto;
+  padding: clamp(1rem, 2vw, 2rem);
+  background:
+    linear-gradient(135deg, rgba(15, 118, 110, 0.16), transparent 34rem),
+    linear-gradient(315deg, rgba(180, 35, 24, 0.14), transparent 32rem),
+    var(--paper);
+}
+
+.games-section:fullscreen .battle-arena {
+  width: min(100%, 1680px);
+  margin-inline: auto;
+}
+
+.games-section:fullscreen .section-heading,
+.games-section:fullscreen .game-toolbar,
+.games-section:fullscreen .note {
+  width: min(100%, 1680px);
+  margin-inline: auto;
 }
 
 .game-toolbar {
@@ -362,13 +387,15 @@ h3 {
 
 .battle-arena {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(6rem, 9rem) minmax(0, 1fr);
-  gap: 1rem;
+  grid-template-columns: minmax(0, 1.08fr) minmax(5.5rem, 7.5rem) minmax(0, 1.08fr);
+  gap: clamp(0.6rem, 1.25vw, 1.25rem);
   align-items: start;
 }
 
 .battle-arena[data-mode="single"] {
-  grid-template-columns: minmax(0, 34rem);
+  --cell: clamp(32px, 3.2vw, 48px);
+  --mini-cell: clamp(1.1rem, 1.6vw, 1.65rem);
+  grid-template-columns: minmax(0, min(100%, 64rem));
   justify-content: center;
 }
 
@@ -378,7 +405,7 @@ h3 {
 }
 
 .player-panel {
-  padding: clamp(0.75rem, 2vw, 1.25rem);
+  padding: clamp(0.7rem, 1.4vw, 1.15rem);
 }
 
 .player-header {
@@ -443,10 +470,14 @@ h3 {
 
 .board-wrap {
   display: grid;
-  grid-template-columns: max-content minmax(4.5rem, 1fr);
-  gap: 0.75rem;
+  grid-template-columns: max-content minmax(4.25rem, 0.6fr);
+  gap: clamp(0.55rem, 1vw, 0.9rem);
   align-items: start;
   justify-content: center;
+}
+
+.battle-arena[data-mode="single"] .board-wrap {
+  grid-template-columns: max-content minmax(5.5rem, 10rem);
 }
 
 .game-board,
@@ -464,8 +495,8 @@ h3 {
 }
 
 .mini-board {
-  grid-template-columns: repeat(4, 1rem);
-  grid-template-rows: repeat(4, 1rem);
+  grid-template-columns: repeat(4, var(--mini-cell));
+  grid-template-rows: repeat(4, var(--mini-cell));
   margin-top: 0.4rem;
 }
 
@@ -614,9 +645,25 @@ h3 {
   text-align: center;
 }
 
+@media (max-width: 1180px) {
+  :root {
+    --cell: clamp(24px, 2.6vw, 30px);
+    --mini-cell: 1rem;
+  }
+
+  .battle-arena {
+    grid-template-columns: minmax(0, 1fr) minmax(5rem, 6.5rem) minmax(0, 1fr);
+  }
+
+  .battle-arena[data-mode="single"] {
+    --cell: clamp(28px, 4.4vw, 38px);
+  }
+}
+
 @media (max-width: 980px) {
   :root {
     --cell: min(4.6vw, 24px);
+    --mini-cell: 1rem;
   }
 
   .hero-section,
@@ -630,11 +677,17 @@ h3 {
     position: static;
     order: -1;
   }
+
+  .battle-arena[data-mode="single"] {
+    --cell: clamp(26px, 5.2vw, 34px);
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 760px) {
   :root {
     --cell: min(8vw, 24px);
+    --mini-cell: 0.95rem;
   }
 
   .site-header {
@@ -678,6 +731,14 @@ h3 {
     justify-items: center;
   }
 
+  .battle-arena[data-mode="single"] {
+    --cell: min(8vw, 24px);
+  }
+
+  .battle-arena[data-mode="single"] .board-wrap {
+    grid-template-columns: 1fr;
+  }
+
   .player-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -690,6 +751,11 @@ h3 {
 
 @media (max-width: 390px) {
   :root {
+    --cell: min(7.4vw, 22px);
+    --mini-cell: 0.9rem;
+  }
+
+  .battle-arena[data-mode="single"] {
     --cell: min(7.4vw, 22px);
   }
 
