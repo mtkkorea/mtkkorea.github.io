@@ -3,16 +3,16 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>mtkkorea | Professional Portfolio</title>
+    <title>mtkkorea Arcade | Mini Games</title>
     <meta
       name="description"
-      content="mtkkorea professional portfolio with a local two-player Battle Tetris game for GitHub Pages."
+      content="mtkkorea Arcade is a GitHub Pages mini game site with Battle Tetris and Brick Blast."
     >
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
     <header class="site-header">
-      <a class="brand" href="#home" aria-label="mtkkorea home">mtkkorea</a>
+      <a class="brand" href="#home" aria-label="mtkkorea arcade home">mtkkorea Arcade</a>
       <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">
         <span class="nav-toggle-line"></span>
         <span class="nav-toggle-line"></span>
@@ -20,86 +20,77 @@
         <span class="sr-only">메뉴 열기</span>
       </button>
       <nav id="site-nav" class="site-nav" aria-label="Primary navigation">
-        <a href="#home">Home</a>
-        <a href="#about">About</a>
-        <a href="#experience">Experience</a>
-        <a href="#projects">Projects</a>
+        <a href="#home">Arcade</a>
         <a href="#games">Games</a>
-        <a href="#contact">Contact</a>
+        <a href="#battle-tetris">Battle Tetris</a>
+        <a href="#brick-blast">Brick Blast</a>
+        <a href="#rules">Rules</a>
       </nav>
     </header>
 
     <main>
-      <section id="home" class="hero-section">
+      <section id="home" class="hero-section arcade-hero">
         <div class="hero-copy">
-          <p class="eyebrow">Professional Website</p>
-          <h1>mtkkorea</h1>
+          <p class="eyebrow">Mini Game Site</p>
+          <h1>mtkkorea Arcade</h1>
           <p class="hero-text">
-            [사람 확인 필요] 여기에 한 줄 프로페셔널 소개를 입력합니다.
+            한 컴퓨터 앞에서 바로 시작하는 작은 게임장입니다. 첫 번째 게임은 전투 테트리스,
+            두 번째 게임은 공을 왕창 쏘아 숫자 블록을 터트리는 Brick Blast입니다.
           </p>
           <div class="hero-actions" aria-label="Primary actions">
-            <a class="button primary" href="#projects">프로젝트 보기</a>
-            <a class="button secondary" href="#games">전투 테트리스 플레이</a>
+            <a class="button primary" href="#battle-tetris">전투 테트리스</a>
+            <a class="button secondary" href="#brick-blast">Brick Blast</a>
           </div>
         </div>
-        <aside class="hero-panel" aria-label="Site highlights">
-          <span>Static GitHub Pages</span>
-          <span>Responsive Portfolio</span>
-          <span>Local 2P Battle Tetris</span>
+        <aside class="hero-panel arcade-panel" aria-label="Arcade highlights">
+          <span>정적 GitHub Pages</span>
+          <span>브라우저에서 바로 플레이</span>
+          <span>키보드, 마우스, 터치 지원</span>
         </aside>
       </section>
 
-      <section id="about" class="content-section">
+      <section id="games" class="content-section game-hub-section">
         <div class="section-heading">
-          <p class="eyebrow">About</p>
-          <h2>소개</h2>
+          <p class="eyebrow">Game Hub</p>
+          <h2>오늘의 미니게임</h2>
+          <p>
+            원하는 게임을 고르고 바로 플레이하세요. 게임은 외부 서버 없이 HTML, CSS, JavaScript만으로 실행됩니다.
+          </p>
         </div>
-        <p>
-          [사람 확인 필요] 이름, 역할, 전문 분야, 핵심 경력 요약을 입력합니다.
-        </p>
-      </section>
 
-      <section id="experience" class="content-section">
-        <div class="section-heading">
-          <p class="eyebrow">Experience</p>
-          <h2>경험</h2>
-        </div>
-        <div class="timeline">
-          <article>
-            <h3>[역할 또는 회사명 필요]</h3>
-            <p>[사람 확인 필요] 주요 업무, 성과, 기간을 입력합니다.</p>
+        <div class="game-cards" aria-label="Game list">
+          <article class="game-card">
+            <p class="game-number">Game 01</p>
+            <h3>Battle Tetris</h3>
+            <p>1인용 점수 도전 또는 한 컴퓨터에서 둘이 겨루는 로컬 전투 테트리스입니다.</p>
+            <a class="button secondary" href="#battle-tetris">테트리스 열기</a>
           </article>
-          <article>
-            <h3>[연구 또는 활동 필요]</h3>
-            <p>[사람 확인 필요] 연구, 교육, 오픈소스, 커뮤니티 활동을 입력합니다.</p>
+          <article class="game-card featured">
+            <p class="game-number">Game 02</p>
+            <h3>Brick Blast</h3>
+            <p>조준선을 잡고 여러 개의 공을 연속 발사해 숫자 블록을 한꺼번에 깨는 벽돌 폭파 게임입니다.</p>
+            <a class="button primary" href="#brick-blast">브릭 블라스트 열기</a>
+          </article>
+          <article class="game-card">
+            <p class="game-number">Coming Soon</p>
+            <h3>Next Cabinet</h3>
+            <p>다음 게임을 꽂아 넣을 빈 슬롯입니다. 이 아케이드는 계속 확장할 수 있습니다.</p>
           </article>
         </div>
-      </section>
 
-      <section id="projects" class="content-section">
-        <div class="section-heading">
-          <p class="eyebrow">Projects</p>
-          <h2>프로젝트</h2>
-        </div>
-        <div class="project-grid">
-          <article class="project-card">
-            <h3>[프로젝트명 필요]</h3>
-            <p>[사람 확인 필요] 프로젝트 설명, 역할, 사용 기술, 결과를 입력합니다.</p>
-          </article>
-          <article class="project-card">
-            <h3>[프로젝트명 필요]</h3>
-            <p>[사람 확인 필요] 공개 가능한 작업 사례를 입력합니다.</p>
-          </article>
-          <article class="project-card">
-            <h3>[프로젝트명 필요]</h3>
-            <p>[사람 확인 필요] GitHub Pages에 공개할 수 있는 프로젝트를 입력합니다.</p>
-          </article>
+        <div class="game-tabs" role="tablist" aria-label="Playable games">
+          <button id="tab-battle-tetris" class="game-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="battle-tetris">
+            Battle Tetris
+          </button>
+          <button id="tab-brick-blast" class="game-tab" type="button" role="tab" aria-selected="false" aria-controls="brick-blast">
+            Brick Blast
+          </button>
         </div>
       </section>
 
-      <section id="games" class="content-section games-section">
+      <section id="battle-tetris" class="content-section games-section game-panel" role="tabpanel" aria-labelledby="tab-battle-tetris">
         <div class="section-heading">
-          <p class="eyebrow">Games</p>
+          <p class="eyebrow">Game 01</p>
           <h2>로컬 2인 전투 테트리스</h2>
           <p>
             1인용으로 점수에 도전하거나, 한 컴퓨터 앞에서 두 명이 동시에 전투 모드로 플레이합니다.
@@ -111,22 +102,22 @@
           <fieldset class="mode-selector" aria-label="Game mode">
             <legend>모드 선택</legend>
             <label>
-              <input type="radio" name="game-mode" value="single" />
+              <input type="radio" name="game-mode" value="single">
               <span>1인용</span>
             </label>
             <label>
-              <input type="radio" name="game-mode" value="versus" checked />
+              <input type="radio" name="game-mode" value="versus" checked>
               <span>2인용</span>
             </label>
           </fieldset>
           <fieldset class="control-selector" data-single-control-selector aria-label="1인용 조작 자판 선택">
             <legend>1인용 조작</legend>
             <label>
-              <input type="radio" name="single-control" value="left" checked />
+              <input type="radio" name="single-control" value="left" checked>
               <span>왼쪽 자판 A/S/D/W</span>
             </label>
             <label>
-              <input type="radio" name="single-control" value="right" />
+              <input type="radio" name="single-control" value="right">
               <span>오른쪽 방향키</span>
             </label>
           </fieldset>
@@ -259,17 +250,57 @@
         </div>
       </section>
 
-      <section id="contact" class="content-section">
+      <section id="brick-blast" class="content-section brick-section game-panel" role="tabpanel" aria-labelledby="tab-brick-blast" hidden>
         <div class="section-heading">
-          <p class="eyebrow">Contact</p>
-          <h2>연락처</h2>
+          <p class="eyebrow">Game 02</p>
+          <h2>Brick Blast</h2>
+          <p>
+            공 묶음을 한 방향으로 쏘아 숫자 블록을 터트리는 아케이드 게임입니다.
+            블록 숫자는 남은 내구도이고, 공이 닿을 때마다 1씩 줄어듭니다.
+          </p>
         </div>
-        <p>[사람 확인 필요] 이메일, GitHub, LinkedIn 또는 공개 가능한 연락 링크를 입력합니다.</p>
+
+        <div class="brick-layout">
+          <article class="brick-cabinet">
+            <div class="brick-hud" aria-label="Brick Blast stats">
+              <span>Round <strong data-brick-round>1</strong></span>
+              <span>Balls <strong data-brick-balls>8</strong></span>
+              <span>Score <strong data-brick-score>0</strong></span>
+              <span>Best <strong data-brick-best>0</strong></span>
+            </div>
+            <canvas
+              id="brick-canvas"
+              class="brick-canvas"
+              width="420"
+              height="620"
+              aria-label="Brick Blast game board"
+            ></canvas>
+            <p id="brick-message" class="battle-message" role="status" aria-live="polite">
+              드래그해서 조준하고 손을 떼면 공 묶음이 발사됩니다.
+            </p>
+            <div class="brick-controls" aria-label="Brick Blast controls">
+              <button id="brick-start" class="button primary" type="button">Brick Blast 시작</button>
+              <button id="brick-restart" class="button secondary" type="button">다시 시작</button>
+            </div>
+          </article>
+
+          <aside id="rules" class="brick-rules-card">
+            <p class="eyebrow">Rules</p>
+            <h3>룰 요약</h3>
+            <ul>
+              <li>아래 발사점에서 조준선을 잡고 공 여러 개를 순서대로 발사합니다.</li>
+              <li>각 블록의 숫자는 내구도입니다. 공이 닿으면 숫자가 1 줄고, 0이 되면 터집니다.</li>
+              <li>모든 공이 바닥으로 돌아오면 한 라운드가 끝나고 새 블록 줄이 내려옵니다.</li>
+              <li>초록 보너스 공을 맞히면 다음 라운드부터 발사 공 수가 늘어납니다.</li>
+              <li>블록이 바닥 위험선까지 내려오면 게임 오버입니다.</li>
+            </ul>
+          </aside>
+        </div>
       </section>
     </main>
 
     <footer class="site-footer">
-      <p>&copy; <span id="current-year"></span> mtkkorea. Built for GitHub Pages.</p>
+      <p>&copy; <span id="current-year"></span> mtkkorea Arcade. Built for GitHub Pages.</p>
     </footer>
 
     <script src="script.js" defer></script>

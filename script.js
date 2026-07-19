@@ -402,6 +402,460 @@
     }
   }
 
+  class BrickBlast {
+    constructor(canvas, elements = {}) {
+      this.canvas = canvas;
+      this.ctx = canvas.getContext("2d");
+      this.elements = elements;
+      this.bestKey = "brickBlastBest";
+      this.best = getStoredBest(this.bestKey);
+      this.width = canvas.width;
+      this.height = canvas.height;
+      this.cols = 7;
+      this.rows = 9;
+      this.margin = 16;
+      this.top = 78;
+      this.gap = 6;
+      this.ballRadius = 5;
+      this.running = false;
+      this.aiming = false;
+      this.animation = null;
+      this.reset();
+      this.bind();
+      this.render();
+    }
+
+    reset() {
+      this.cancelAnimation();
+      this.round = 1;
+      this.score = 0;
+      this.ballCount = 8;
+      this.pendingBonus = 0;
+      this.blocks = [];
+      this.bonusBalls = [];
+      this.balls = [];
+      this.particles = [];
+      this.moving = false;
+      this.gameOver = false;
+      this.launchPoint = { x: this.width / 2, y: this.height - 38 };
+      this.aimPoint = { x: this.width / 2, y: this.height - 220 };
+      this.addRow();
+      this.updateHud("드래그해서 조준하고 손을 떼면 공 묶음이 발사됩니다.");
+      this.render();
+    }
+
+    bind() {
+      this.canvas.addEventListener("pointerdown", (event) => this.startAim(event));
+      this.canvas.addEventListener("pointermove", (event) => this.moveAim(event));
+      this.canvas.addEventListener("pointerup", (event) => this.releaseAim(event));
+      this.canvas.addEventListener("pointercancel", () => {
+        this.aiming = false;
+      });
+    }
+
+    start() {
+      if (this.gameOver) this.reset();
+      this.running = true;
+      this.updateHud("발사 각도를 잡아보세요. 위쪽으로 당길수록 더 시원하게 튕깁니다.");
+      this.render();
+    }
+
+    cancelAnimation() {
+      if (this.animation) {
+        cancelAnimationFrame(this.animation);
+        this.animation = null;
+      }
+    }
+
+    cellSize() {
+      return (this.width - this.margin * 2 - this.gap * (this.cols - 1)) / this.cols;
+    }
+
+    addRow() {
+      this.blocks.forEach((block) => {
+        block.row += 1;
+      });
+      this.bonusBalls.forEach((bonus) => {
+        bonus.row += 1;
+      });
+      const occupied = new Set();
+      const cells = Array.from({ length: this.cols }, (_, index) => index).sort(() => Math.random() - 0.5);
+      const count = Math.min(this.cols - 1, 3 + Math.floor(this.round / 2));
+      cells.slice(0, count).forEach((col) => {
+        const hp = this.round + Math.floor(Math.random() * Math.max(2, this.round + 2));
+        this.blocks.push({ row: 0, col, hp, maxHp: hp });
+        occupied.add(col);
+      });
+      const bonusCol = cells.find((col) => !occupied.has(col));
+      if (bonusCol !== undefined && (this.round === 1 || Math.random() < 0.82)) {
+        this.bonusBalls.push({ row: 0, col: bonusCol, collected: false });
+      }
+      if (this.blocks.some((block) => block.row >= this.rows - 1)) {
+        this.gameOver = true;
+        this.running = false;
+        this.updateHud("게임 오버! 블록이 위험선에 닿았습니다. 다시 시작으로 재도전하세요.");
+      }
+    }
+
+    pointFromEvent(event) {
+      const rect = this.canvas.getBoundingClientRect();
+      const scaleX = this.width / rect.width;
+      const scaleY = this.height / rect.height;
+      return {
+        x: (event.clientX - rect.left) * scaleX,
+        y: (event.clientY - rect.top) * scaleY,
+      };
+    }
+
+    startAim(event) {
+      if (!this.running || this.moving || this.gameOver) return;
+      event.preventDefault();
+      this.aiming = true;
+      this.canvas.setPointerCapture?.(event.pointerId);
+      this.moveAim(event);
+    }
+
+    moveAim(event) {
+      if (!this.aiming) return;
+      event.preventDefault();
+      const point = this.pointFromEvent(event);
+      this.aimPoint = {
+        x: Math.max(this.margin, Math.min(this.width - this.margin, point.x)),
+        y: Math.max(this.top, Math.min(this.launchPoint.y - 48, point.y)),
+      };
+      this.render();
+    }
+
+    releaseAim(event) {
+      if (!this.aiming) return;
+      event.preventDefault();
+      this.aiming = false;
+      this.fire();
+    }
+
+    fire() {
+      if (!this.running || this.moving || this.gameOver) return;
+      const dx = this.aimPoint.x - this.launchPoint.x;
+      const dy = this.aimPoint.y - this.launchPoint.y;
+      const length = Math.hypot(dx, dy);
+      if (length < 24 || dy > -12) {
+        this.updateHud("위쪽으로 길게 조준한 뒤 손을 떼세요.");
+        return;
+      }
+      const speed = 6.2;
+      const vx = (dx / length) * speed;
+      const vy = Math.min(-2.5, (dy / length) * speed);
+      this.balls = Array.from({ length: this.ballCount }, (_, index) => ({
+        x: this.launchPoint.x,
+        y: this.launchPoint.y,
+        vx,
+        vy,
+        delay: index * 5,
+        done: false,
+      }));
+      this.moving = true;
+      this.updateHud(`${this.ballCount}개의 공을 발사했습니다. 블록이 와르르 깨지는 순간을 기다려보세요.`);
+      this.tick();
+    }
+
+    blockRect(block) {
+      const size = this.cellSize();
+      return {
+        x: this.margin + block.col * (size + this.gap),
+        y: this.top + block.row * (size + this.gap),
+        width: size,
+        height: size,
+      };
+    }
+
+    bonusCenter(bonus) {
+      const rect = this.blockRect(bonus);
+      return {
+        x: rect.x + rect.width / 2,
+        y: rect.y + rect.height / 2,
+      };
+    }
+
+    tick() {
+      if (!this.moving) return;
+      this.balls.forEach((ball) => this.updateBall(ball));
+      this.particles.forEach((particle) => {
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        particle.life -= 1;
+      });
+      this.particles = this.particles.filter((particle) => particle.life > 0);
+      if (this.balls.every((ball) => ball.done)) {
+        this.finishRound();
+        return;
+      }
+      this.render();
+      this.animation = requestAnimationFrame(() => this.tick());
+    }
+
+    updateBall(ball) {
+      if (ball.done) return;
+      if (ball.delay > 0) {
+        ball.delay -= 1;
+        return;
+      }
+      ball.x += ball.vx;
+      ball.y += ball.vy;
+      if (ball.x <= this.margin || ball.x >= this.width - this.margin) {
+        ball.vx *= -1;
+        ball.x = Math.max(this.margin, Math.min(this.width - this.margin, ball.x));
+      }
+      if (ball.y <= this.top - 42) {
+        ball.vy *= -1;
+        ball.y = this.top - 42;
+      }
+      if (ball.y >= this.launchPoint.y) {
+        ball.done = true;
+        ball.y = this.launchPoint.y;
+        return;
+      }
+      this.hitBonus(ball);
+      this.hitBlocks(ball);
+    }
+
+    hitBonus(ball) {
+      this.bonusBalls.forEach((bonus) => {
+        if (bonus.collected) return;
+        const center = this.bonusCenter(bonus);
+        if (Math.hypot(ball.x - center.x, ball.y - center.y) < this.cellSize() * 0.32) {
+          bonus.collected = true;
+          this.pendingBonus += 1;
+          this.spawnParticles(center.x, center.y, "#22c55e", 8);
+        }
+      });
+    }
+
+    hitBlocks(ball) {
+      const index = this.blocks.findIndex((block) => {
+        const rect = this.blockRect(block);
+        return (
+          ball.x + this.ballRadius >= rect.x &&
+          ball.x - this.ballRadius <= rect.x + rect.width &&
+          ball.y + this.ballRadius >= rect.y &&
+          ball.y - this.ballRadius <= rect.y + rect.height
+        );
+      });
+      if (index === -1) return;
+      const block = this.blocks[index];
+      const rect = this.blockRect(block);
+      const overlapLeft = Math.abs(ball.x - rect.x);
+      const overlapRight = Math.abs(ball.x - (rect.x + rect.width));
+      const overlapTop = Math.abs(ball.y - rect.y);
+      const overlapBottom = Math.abs(ball.y - (rect.y + rect.height));
+      const minOverlap = Math.min(overlapLeft, overlapRight, overlapTop, overlapBottom);
+      if (minOverlap === overlapLeft || minOverlap === overlapRight) {
+        ball.vx *= -1;
+      } else {
+        ball.vy *= -1;
+      }
+      block.hp -= 1;
+      this.score += 1;
+      this.spawnParticles(ball.x, ball.y, "#fbbf24", 3);
+      if (block.hp <= 0) {
+        this.blocks.splice(index, 1);
+        this.score += 10 + this.round;
+        this.spawnParticles(rect.x + rect.width / 2, rect.y + rect.height / 2, "#fb7185", 14);
+      }
+      if (this.score > this.best) {
+        this.best = this.score;
+        setStoredBest(this.bestKey, this.best);
+      }
+    }
+
+    finishRound() {
+      this.moving = false;
+      this.round += 1;
+      this.ballCount += this.pendingBonus;
+      const bonusText = this.pendingBonus > 0 ? ` 보너스 공 ${this.pendingBonus}개를 획득했습니다.` : "";
+      this.pendingBonus = 0;
+      this.bonusBalls = this.bonusBalls.filter((bonus) => !bonus.collected);
+      this.addRow();
+      if (!this.gameOver) {
+        this.updateHud(`라운드 ${this.round}입니다.${bonusText} 다시 조준해서 더 크게 터트려보세요.`);
+      }
+      this.render();
+    }
+
+    spawnParticles(x, y, color, count) {
+      const reduceMotion = typeof matchMedia !== "undefined" && matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduceMotion) return;
+      for (let i = 0; i < count; i += 1) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 1 + Math.random() * 3;
+        this.particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          color,
+          life: 18 + Math.random() * 16,
+        });
+      }
+    }
+
+    updateHud(message) {
+      const { round, balls, score, best, message: messageElement } = this.elements;
+      if (round) round.textContent = this.round;
+      if (balls) balls.textContent = this.ballCount;
+      if (score) score.textContent = this.score;
+      if (best) best.textContent = this.best;
+      if (messageElement && message) messageElement.textContent = message;
+    }
+
+    render() {
+      const ctx = this.ctx;
+      ctx.clearRect(0, 0, this.width, this.height);
+      const gradient = ctx.createLinearGradient(0, 0, 0, this.height);
+      gradient.addColorStop(0, "#13245a");
+      gradient.addColorStop(1, "#0f172a");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, this.width, this.height);
+
+      ctx.strokeStyle = "rgba(255,255,255,0.08)";
+      ctx.lineWidth = 1;
+      for (let x = this.margin; x <= this.width - this.margin; x += this.cellSize() + this.gap) {
+        ctx.beginPath();
+        ctx.moveTo(x, this.top - 18);
+        ctx.lineTo(x, this.launchPoint.y);
+        ctx.stroke();
+      }
+
+      this.drawBlocks();
+      this.drawBonuses();
+      this.drawAim();
+      this.drawBalls();
+      this.drawParticles();
+
+      ctx.strokeStyle = "rgba(239,68,68,0.72)";
+      ctx.setLineDash([8, 8]);
+      ctx.beginPath();
+      ctx.moveTo(this.margin, this.top + (this.rows - 1) * (this.cellSize() + this.gap) - this.gap / 2);
+      ctx.lineTo(this.width - this.margin, this.top + (this.rows - 1) * (this.cellSize() + this.gap) - this.gap / 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (!this.running && !this.gameOver) {
+        this.drawOverlay("Brick Blast", "시작 버튼을 누르고 조준해보세요.");
+      }
+      if (this.gameOver) {
+        this.drawOverlay("Game Over", "다시 시작으로 새 게임을 시작하세요.");
+      }
+    }
+
+    drawBlocks() {
+      this.blocks.forEach((block) => {
+        const rect = this.blockRect(block);
+        const ratio = Math.max(0.1, block.hp / block.maxHp);
+        const hue = 195 - ratio * 155;
+        this.ctx.fillStyle = `hsl(${hue}, 84%, 55%)`;
+        this.ctx.shadowColor = "rgba(251,191,36,0.42)";
+        this.ctx.shadowBlur = block.hp <= 2 ? 18 : 0;
+        this.roundRect(rect.x, rect.y, rect.width, rect.height, 8);
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0;
+        this.ctx.fillStyle = "#0f172a";
+        this.ctx.font = "700 18px Trebuchet MS, sans-serif";
+        this.ctx.textAlign = "center";
+        this.ctx.textBaseline = "middle";
+        this.ctx.fillText(block.hp, rect.x + rect.width / 2, rect.y + rect.height / 2);
+      });
+    }
+
+    drawBonuses() {
+      this.bonusBalls.forEach((bonus) => {
+        if (bonus.collected) return;
+        const center = this.bonusCenter(bonus);
+        this.ctx.fillStyle = "#22c55e";
+        this.ctx.shadowColor = "rgba(34,197,94,0.7)";
+        this.ctx.shadowBlur = 14;
+        this.ctx.beginPath();
+        this.ctx.arc(center.x, center.y, 11, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0;
+        this.ctx.fillStyle = "#052e16";
+        this.ctx.font = "800 14px Trebuchet MS, sans-serif";
+        this.ctx.textAlign = "center";
+        this.ctx.textBaseline = "middle";
+        this.ctx.fillText("+", center.x, center.y + 1);
+      });
+    }
+
+    drawAim() {
+      if (!this.running || this.moving || this.gameOver) return;
+      this.ctx.strokeStyle = "rgba(255,255,255,0.35)";
+      this.ctx.fillStyle = "rgba(251,191,36,0.92)";
+      this.ctx.lineWidth = 3;
+      this.ctx.setLineDash([6, 10]);
+      this.ctx.beginPath();
+      this.ctx.moveTo(this.launchPoint.x, this.launchPoint.y);
+      this.ctx.lineTo(this.aimPoint.x, this.aimPoint.y);
+      this.ctx.stroke();
+      this.ctx.setLineDash([]);
+      for (let i = 1; i <= 8; i += 1) {
+        const t = i / 9;
+        const x = this.launchPoint.x + (this.aimPoint.x - this.launchPoint.x) * t;
+        const y = this.launchPoint.y + (this.aimPoint.y - this.launchPoint.y) * t;
+        this.ctx.beginPath();
+        this.ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+        this.ctx.fill();
+      }
+    }
+
+    drawBalls() {
+      const visibleBalls = this.balls.filter((ball) => !ball.done && ball.delay <= 0);
+      if (visibleBalls.length === 0) {
+        visibleBalls.push({ x: this.launchPoint.x, y: this.launchPoint.y });
+      }
+      visibleBalls.forEach((ball) => {
+        this.ctx.fillStyle = "#fbbf24";
+        this.ctx.shadowColor = "rgba(251,191,36,0.7)";
+        this.ctx.shadowBlur = 12;
+        this.ctx.beginPath();
+        this.ctx.arc(ball.x, ball.y, this.ballRadius, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.shadowBlur = 0;
+      });
+    }
+
+    drawParticles() {
+      this.particles.forEach((particle) => {
+        this.ctx.globalAlpha = Math.max(0, particle.life / 30);
+        this.ctx.fillStyle = particle.color;
+        this.ctx.beginPath();
+        this.ctx.arc(particle.x, particle.y, 3, 0, Math.PI * 2);
+        this.ctx.fill();
+      });
+      this.ctx.globalAlpha = 1;
+    }
+
+    drawOverlay(title, copy) {
+      this.ctx.fillStyle = "rgba(15, 23, 42, 0.68)";
+      this.ctx.fillRect(0, 0, this.width, this.height);
+      this.ctx.fillStyle = "#fff7ed";
+      this.ctx.textAlign = "center";
+      this.ctx.textBaseline = "middle";
+      this.ctx.font = "800 34px Trebuchet MS, sans-serif";
+      this.ctx.fillText(title, this.width / 2, this.height / 2 - 18);
+      this.ctx.font = "700 16px Trebuchet MS, sans-serif";
+      this.ctx.fillText(copy, this.width / 2, this.height / 2 + 22);
+    }
+
+    roundRect(x, y, width, height, radius) {
+      this.ctx.beginPath();
+      this.ctx.moveTo(x + radius, y);
+      this.ctx.arcTo(x + width, y, x + width, y + height, radius);
+      this.ctx.arcTo(x + width, y + height, x, y + height, radius);
+      this.ctx.arcTo(x, y + height, x, y, radius);
+      this.ctx.arcTo(x, y, x + width, y, radius);
+      this.ctx.closePath();
+    }
+  }
+
   const makeCells = (container, count, className) => {
     container.textContent = "";
     return Array.from({ length: count }, () => {
@@ -447,9 +901,52 @@
     const gameRoot = document.querySelector("[data-game-root]");
     const modeCopy = document.querySelector("[data-mode-copy]");
     const controlHelps = [...document.querySelectorAll("[data-control-help]")];
-    const gamesSection = document.querySelector("#games");
+    const gamesSection = document.querySelector("#battle-tetris");
     const boards = [...document.querySelectorAll("[data-board]")];
     const nextBoards = [...document.querySelectorAll("[data-next]")];
+
+    const gameTabs = [...document.querySelectorAll("[role='tab'][aria-controls]")];
+    const gamePanels = [...document.querySelectorAll(".game-panel[role='tabpanel']")];
+    const showGamePanel = (panelId) => {
+      gameTabs.forEach((tab) => {
+        const isActive = tab.getAttribute("aria-controls") === panelId;
+        tab.classList.toggle("is-active", isActive);
+        tab.setAttribute("aria-selected", isActive.toString());
+      });
+      gamePanels.forEach((panel) => {
+        panel.toggleAttribute("hidden", panel.id !== panelId);
+      });
+    };
+    gameTabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const panelId = tab.getAttribute("aria-controls");
+        if (panelId) showGamePanel(panelId);
+      });
+    });
+    document.querySelectorAll('a[href="#battle-tetris"], a[href="#brick-blast"], a[href="#rules"]').forEach((link) => {
+      link.addEventListener("click", () => {
+        const panelId = link.getAttribute("href")?.slice(1);
+        if (panelId === "rules") {
+          showGamePanel("brick-blast");
+        } else if (panelId) {
+          showGamePanel(panelId);
+        }
+      });
+    });
+
+    const brickCanvas = document.querySelector("#brick-canvas");
+    if (brickCanvas instanceof HTMLCanvasElement) {
+      const brickGame = new BrickBlast(brickCanvas, {
+        round: document.querySelector("[data-brick-round]"),
+        balls: document.querySelector("[data-brick-balls]"),
+        score: document.querySelector("[data-brick-score]"),
+        best: document.querySelector("[data-brick-best]"),
+        message: document.querySelector("#brick-message"),
+      });
+      document.querySelector("#brick-start")?.addEventListener("click", () => brickGame.start());
+      document.querySelector("#brick-restart")?.addEventListener("click", () => brickGame.reset());
+      window.BrickBlast = { BrickBlast };
+    }
 
     if (currentYear) {
       currentYear.textContent = new Date().getFullYear().toString();
@@ -715,5 +1212,6 @@
 
   if (typeof globalThis !== "undefined") {
     globalThis.BattleTetrisCore = { BattleTetris, PlayerState, rotateMatrix, createEmptyBoard };
+    globalThis.BrickBlastCore = { BrickBlast };
   }
 })();
